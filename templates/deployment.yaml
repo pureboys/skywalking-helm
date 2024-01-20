@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: skywalking
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      name: elasticsearch
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: elasticsearch:7.16.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
+            - name: discovery.type
+              value: "single-node"
+      restartPolicy: Always
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-server
+  namespace: skywalking
+  labels:
+    app: skywalking-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-server
+  template:
+    metadata:
+      name: skywalking-server
+      labels:
+        app: skywalking-server
+    spec:
+      containers:
+        - name: skywalking-server
+          image: apache/skywalking-oap-server:9.6.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SW_STORAGE
+              value: elasticsearch
+            - name: SW_STORAGE_ES_CLUSTER_NODES
+              value: elasticsearch:9200
+      restartPolicy: Always
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-ui
+  namespace: skywalking
+  labels:
+    app: skywalking-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-ui
+  template:
+    metadata:
+      name: skywalking-ui
+      labels:
+        app: skywalking-ui
+    spec:
+      containers:
+        - name: skywalking-ui
+          image: apache/skywalking-ui:9.6.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SW_OAP_ADDRESS
+              value: http://skywalking-server:12800
+      restartPolicy: Always
